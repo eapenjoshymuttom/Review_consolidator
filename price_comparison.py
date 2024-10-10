@@ -47,11 +47,10 @@ def flipkart(name):
         flipkart_price= '0'
     return flipkart_price
 
-def amazon(name):
+def amazon(name, url):
     try:
         global amazon
-        search_query = f"{product_name} site:amazon.com"
-        amazon = f"https://www.google.com/search?q={search_query.replace(' ', '+')}"
+        amazon = "f{url}"
         print("\nSearching in amazon...")
         soup = BeautifulSoup(res.text,'html.parser')
         amazon_page = soup.select('.a-color-base.a-text-normal')
@@ -91,9 +90,9 @@ def convert(a):
     g=int(float(f))
     return g
 
-def priceComparison(name):
+def priceComparison(name, url):
     flipkart_price=flipkart(name)
-    amazon_price=amazon(name)
+    amazon_price=amazon(name, url)
 
 
     if flipkart_price=='0':

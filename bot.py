@@ -84,7 +84,8 @@ def get_or_create_db(product_name):
         print(f"Loaded existing FAISS database for {product_name}.")
     except FileNotFoundError:
         print(f"No existing database found for {product_name}. Creating new database from reviews.")
-        reviews = reviewExtractor.extractReviews(product_name)
+        reviews, url = reviewExtractor.extractReviews(product_name)
+        price_comparison.priceComparison(product_name,url)
         db = create_db_from_reviews(reviews)
         save_db(db, product_name)
         print(f"New database created and saved for {product_name}.")
@@ -97,11 +98,11 @@ def main(product_name):
     print("\nProduct Summary:")
     summary = get_product_summary(db)
     print(summary)
-    price_comparison.priceComparison(product_name)
+    # price_comparison.priceComparison(product_name,url)
 
     while True:
-        question = input("\nEnter your question about the product (or 'quit' to exit): ")
-        if question.lower() == 'quit':
+        question = input("\nEnter your question about the product (or 'q' to exit): ")
+        if question.lower() == 'q':
             break
 
         answer, _ = get_response_from_query(db, question)
