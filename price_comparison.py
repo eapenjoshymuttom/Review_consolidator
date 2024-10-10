@@ -50,7 +50,7 @@ def flipkart(name):
 def amazon(name, url):
     try:
         global amazon
-        amazon = "f{url}"
+        amazon = f"{url}"
         print("\nSearching in amazon...")
         soup = BeautifulSoup(res.text,'html.parser')
         amazon_page = soup.select('.a-color-base.a-text-normal')
