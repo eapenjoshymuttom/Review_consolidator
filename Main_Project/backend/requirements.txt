@@ -1,0 +1,30 @@
+# Web scraping and data processing
+selenium
+webdriver-manager
+requests
+pandas
+beautifulsoup4
+lxml
+
+# AI and NLP
+langchain
+openai
+faiss-cpu
+transformers
+langchain_community
+langchain_huggingface # Updated to the latest available version
+groq
+
+
+# Backend
+fastapi
+uvicorn
+pydantic
+
+# Utilities
+python-dotenv
+
+# Additional dependencies
+numpy
+scikit-learn
+tqdm

@@ -149,4 +149,5 @@ def extractReviews(product_name):
     df_reviews.to_csv('reviews.csv', index=False)
     value = df_reviews['Description'].tolist()
 
-    return value, url
+    return value
+

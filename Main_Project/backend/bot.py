@@ -54,14 +54,9 @@ def get_response_from_query(db, query, k=8):
 
     completion = client.chat.completions.create(
         model="llama3-70b-8192",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.7,
-        max_tokens=8192,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=1.66,
+        max_tokens=3990,
         top_p=1,
         stream=True,
         stop=None,
@@ -84,8 +79,7 @@ def get_or_create_db(product_name):
         print(f"Loaded existing FAISS database for {product_name}.")
     except FileNotFoundError:
         print(f"No existing database found for {product_name}. Creating new database from reviews.")
-        reviews, url = reviewExtractor.extractReviews(product_name)
-        price_comparison.priceComparison(product_name,url)
+        reviews = reviewExtractor.extractReviews(product_name)
         db = create_db_from_reviews(reviews)
         save_db(db, product_name)
         print(f"New database created and saved for {product_name}.")
@@ -98,11 +92,11 @@ def main(product_name):
     print("\nProduct Summary:")
     summary = get_product_summary(db)
     print(summary)
-    # price_comparison.priceComparison(product_name,url)
+    price_comparison.priceComparison(product_name)
 
     while True:
-        question = input("\nEnter your question about the product (or 'q' to exit): ")
-        if question.lower() == 'q':
+        question = input("\nEnter your question about the product (or 'quit' to exit): ")
+        if question.lower() == 'quit':
             break
 
         answer, _ = get_response_from_query(db, question)
