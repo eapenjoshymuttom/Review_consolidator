@@ -1,136 +1,155 @@
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
-headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36'}
+# Headers for web requests
+headers_flip = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'}
+headers_amaz = {
+    'rtt': '100',
+    'downlink': '10',
+    'ect': '4g',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36',
+}
 
-flipkart=''
-amazon=''
+# Set up Selenium WebDriver
+options = Options()
+options.add_argument('--headless')
+options.add_argument('--profile-directory=Default')
+driver = webdriver.Chrome(options=options)
 
-def flipkart(name):
+def flip_prize(product, Flag):
+    url = 'https://www.flipkart.com/search?q=' + product + '&otracker=AS_Query_HistoryAutoSuggest_2_0&otracker1=AS_Query_HistoryAutoSuggest_2_0&marketplace=FLIPKART&as-show=on&as=off&as-pos=2&as-type=HISTORY'
+    driver.get(url)
+    html = driver.page_source
+    page = BeautifulSoup(html, 'html.parser')
+    main_box = page.find_all('div', {"class": "_3O0U0u"})
+    temp = []
     try:
-        global flipkart
-        name1 = name.replace(" ","+")
-        flipkart=f'https://www.flipkart.com/search?q={name1}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=off&as=off'
-        res = requests.get(f'https://www.flipkart.com/search?q={name1}&otracker=search&otracker1=search&marketplace=FLIPKART&as-show=off&as=off',headers=headers)
-
-
-        print("\nSearching in flipkart....")
-        soup = BeautifulSoup(res.text,'html.parser')
-        
-        if(soup.select('._4rR01T')):
-            flipkart_name = soup.select('._4rR01T')[0].getText().strip().upper()
-            if name.upper() in flipkart_name:
-                flipkart_price = soup.select('._30jeq3')[0].getText().strip()
-                flipkart_name = soup.select('._4rR01T')[0].getText().strip()
-                print("Flipkart:")
-                print(flipkart_name)
-                print(flipkart_price)
-                print("---------------------------------")
-                
-        elif(soup.select('.s1Q9rs')):
-            flipkart_name = soup.select('.s1Q9rs')[0].getText().strip()
-            flipkart_name = flipkart_name.upper()
-            if name.upper() in flipkart_name:
-                flipkart_price = soup.select('._30jeq3')[0].getText().strip()
-                flipkart_name = soup.select('.s1Q9rs')[0].getText().strip()
-                print("Flipkart:")
-                print(flipkart_name)
-                print(flipkart_price)
-                print("---------------------------------")
+        if not Flag:
+            for box in main_box:
+                s = "https://www.flipkart.com"
+                link = box.find("a", {"class": "_31qSD5"}, href=True)
+                l = s + link['href']
+                val = box.find("div", {"class": "_3wU53n"}).text.strip()
+                product_img = box.find('img', {'class': '_1Nyybr'}).get('src')
+                if product.lower() in val.lower():
+                    price = box.find("div", {"class": "_1vC4OE _2rQ-NK"}).text.strip()
+                    temp.append([l, product_img, val, price])
         else:
-            flipkart_price='0'
-            
-        return flipkart_price 
+            for box in main_box:
+                s = "https://www.flipkart.com"
+                link = box.find("a", {"class": "_31qSD5"}, href=True)
+                l = s + link['href']
+                title = box.find("div", {"class": "_3wU53n"}).text.strip()
+                price = box.find("div", {"class": "_1vC4OE _2rQ-NK"}).text.strip()
+                product_img = box.find('img', {'class': '_1Nyybr'}).get('src')
+                temp.append([l, product_img, title, price])
     except:
-        print("Flipkart: No product found!")  
-        print("---------------------------------")
-        flipkart_price= '0'
-    return flipkart_price
+        pass
+    return temp
 
-def amazon(name):
+def amaz_price(product, Flag):
+    url = "https://www.amazon.in/s?k=" + product + "&crid=LU6AG6TQWH25&sprefix=best+phones+%2Caps%2C314&ref=nb_sb_ss_i_1_12"
+    response = requests.get(url, headers=headers_amaz)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    main_box = soup.find_all('div', {"class": "s-include-content-margin s-border-bottom s-latency-cf-section"})
+    temp = []
+    if not Flag:
+        for box in main_box:
+            s = "https://www.amazon.in"
+            link = box.find("a", {"class": "a-link-normal a-text-normal"}, href=True)
+            l = s + link['href']
+            val = box.find("span", {"class": "a-size-medium a-color-base a-text-normal"}).text.strip()
+            product_img = box.find("img", {"class": "s-image"}).get('src')
+            if product.lower() in val.lower():
+                pr = box.find("span", {"class": "a-price-whole"})
+                price = pr.text.strip() if pr else "N/A"
+                if price != "N/A":
+                    temp.append([l, product_img, val, price])
+    else:
+        for box in main_box:
+            s = "https://www.amazon.in"
+            link = box.find("a", {"class": "a-link-normal a-text-normal"}, href=True)
+            l = s + link['href']
+            title = box.find("span", {"class": "a-size-medium a-color-base a-text-normal"}).text.strip()
+            pr = box.find("span", {"class": "a-price-whole"})
+            price = pr.text.strip() if pr else "N/A"
+            product_img = box.find("img", {"class": "s-image"}).get('src')
+            if price != "N/A":
+                temp.append([l, product_img, title, price])
+    return temp
+
+def flip_app_price(product):
+    url = 'https://www.flipkart.com/search?q=' + product + '&otracker=AS_Query_HistoryAutoSuggest_2_0&otracker1=AS_Query_HistoryAutoSuggest_2_0&marketplace=FLIPKART&as-show=on&as=off&as-pos=2&as-type=HISTORY'
+    driver.get(url)
+    html = driver.page_source
+    page = BeautifulSoup(html, 'html.parser')
+    main_box = page.find_all('div', {"class": "IIdQZO _1SSAGr"})
+    temp = []
     try:
-        global amazon
-        search_query = f"{product_name} site:amazon.com"
-        amazon = f"https://www.google.com/search?q={search_query.replace(' ', '+')}"
-        print("\nSearching in amazon...")
-        soup = BeautifulSoup(res.text,'html.parser')
-        amazon_page = soup.select('.a-color-base.a-text-normal')
-        amazon_page_length = int(len(amazon_page))
-        for i in range(0,amazon_page_length):
-            name = name.upper()
-            amazon_name = soup.select('.a-color-base.a-text-normal')[i].getText().strip().upper()
-            if name in amazon_name:
-                amazon_name = soup.select('.a-color-base.a-text-normal')[i].getText().strip()
-                amazon_price = soup.select('.a-price-whole')[i].getText().strip().upper()
-                print("Amazon:")
-                print(amazon_name)
-                print("₹"+amazon_price)
-                print("---------------------------------")
-                break
-            else:
-                i+=1
-                i=int(i)
-                if i==amazon_page_length:
-                    amazon_price = '0'
-                    print("amazon : No product found!")
-                    print("-----------------------------")
-                    break
-                    
-        return amazon_price
+        for box in main_box:
+            s = "https://www.flipkart.com"
+            link = box.find("a", {"class": "_3dqZjq"}, href=True)
+            l = s + link['href']
+            title = box.find("a", {"class": "_2mylT6"}).text.strip()
+            price = box.find("div", {"class": "_1vC4OE"}).text.strip()
+            product_img = box.find('img', {'class': '_3togXc'}).get('src')
+            temp.append([l, product_img, title, price])
     except:
-        print("Amazon: No product found!")
-        print("---------------------------------")
-        amazon_price = '0'
-    return amazon_price
+        pass
+    return temp
 
-def convert(a):
-    b=a.replace(" ",'')
-    c=b.replace("INR",'')
-    d=c.replace(",",'')
-    f=d.replace("₹",'')
-    g=int(float(f))
-    return g
+def amaz_app_price(product):
+    url = "https://www.amazon.in/s?k=" + product + "&crid=3GQP78C68F4YO&sprefix=t%2Caps%2C395&ref=nb_sb_ss_organic-diversity_1_1"
+    response = requests.get(url, headers=headers_amaz)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    main_box = soup.find_all('div', {"class": "s-expand-height s-include-content-margin s-latency-cf-section"})
+    temp = []
+    try:
+        for box in main_box:
+            s = "https://www.amazon.in"
+            link = box.find("a", {"class": "a-link-normal a-text-normal"}, href=True)
+            l = s + link['href']
+            title = box.find("span", {"class": "a-size-base-plus a-color-base a-text-normal"}).text.strip()
+            price = box.find("span", {"class": "a-offscreen"}).text.strip()
+            product_img = box.find("img", {"class": "s-image"}).get('src')
+            temp.append([l, product_img, title, price])
+    except:
+        pass
+    return temp
 
-def priceComparison(name):
-    flipkart_price=flipkart(name)
-    amazon_price=amazon(name)
-
-
-    if flipkart_price=='0':
-        print("Flipkart: No product found!")
-        flipkart_price = int(flipkart_price)
-    else:
-        print("\nFlipkart Price:",flipkart_price)
-        flipkart_price=convert(flipkart_price)
-    if amazon_price=='0':
-        print("Amazon: No product found!")
-        amazon_price = int(amazon_price)
-    else:
-        print("\nAmazon price: ₹",amazon_price)
-        amazon_price=convert(amazon_price)
-
-    lst = [flipkart_price,amazon_price]
-    #print(lst)
-    lst2=[]
-    for j in range(0,len(lst)):
-        if lst[j]>0:
-            lst2.append(lst[j])
-    if len(lst2)==0:
-        print("No relative product find in all websites....")
-    else:
-        min_price=min(lst2)
-
-        print("_")
-        print("\nMinimun Price: ₹",min_price)
-        price = {
-            f'{amazon_price}':f'{amazon}',
-            f'{flipkart_price}':f'{flipkart}',
-        }
-        for key, value in price.items():
-            if int(key)==min_price:
-                print ('\nURL:', price[key],'\n')
+def priceComparison(product_name):
+    print("\nPrice Comparison:")
     
-        print("---------------------------------------------------------URLs--------------------------------------------------------------")
-        print("Flipkart : \n",flipkart)
-        print("\nAmazon : \n",amazon)
-        print("---------------------------------------------------------------------------------------------------------------------------")
+    # Get prices from Flipkart
+    flipkart_prices = flip_prize(product_name, False)
+    if flipkart_prices:
+        print("\nFlipkart Prices:")
+        for item in flipkart_prices[:3]:  # Display top 3 results
+            print(f"Product: {item[2]}")
+            print(f"Price: {item[3]}")
+            print(f"Link: {item[0]}")
+            print("-" * 50)
+    else:
+        print("No results found on Flipkart")
+
+    # Get prices from Amazon
+    amazon_prices = amaz_price(product_name, False)
+    if amazon_prices:
+        print("\nAmazon Prices:")
+        for item in amazon_prices[:3]:  # Display top 3 results
+            print(f"Product: {item[2]}")
+            print(f"Price: ₹{item[3]}")
+            print(f"Link: {item[0]}")
+            print("-" * 50)
+    else:
+        print("No results found on Amazon")
+
+    # Close the Selenium WebDriver
+    driver.quit()
+
+if __name__ == "__main__":
+    product_name = input("Enter the product name for price comparison: ")
+    priceComparison(product_name)

@@ -5,4 +5,4 @@ __pycache__/
 myenv/
 /product_dbs/
 /faiss_index.pkl
-/reviews.csv
+reviews.csv

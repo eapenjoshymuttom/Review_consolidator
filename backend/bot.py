@@ -92,7 +92,7 @@ def main(product_name):
     print("\nProduct Summary:")
     summary = get_product_summary(db)
     print(summary)
-    price_comparison.priceComparison(product_name)
+    # price_comparison.priceComparison(product_name)
 
     while True:
         question = input("\nEnter your question about the product (or 'quit' to exit): ")
