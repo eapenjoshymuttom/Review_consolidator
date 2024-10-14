@@ -1,0 +1,7 @@
+.env
+# Ignore Python cache and virtual environment directories
+__pycache__/
+myenv/
+/product_dbs/
+/faiss_index.pkl
+/reviews.csv

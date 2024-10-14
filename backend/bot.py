@@ -54,14 +54,9 @@ def get_response_from_query(db, query, k=8):
 
     completion = client.chat.completions.create(
         model="llama3-70b-8192",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.7,
-        max_tokens=8192,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=1.66,
+        max_tokens=3990,
         top_p=1,
         stream=True,
         stop=None,
@@ -97,7 +92,7 @@ def main(product_name):
     print("\nProduct Summary:")
     summary = get_product_summary(db)
     print(summary)
-    price_comparison.priceComparison(product_name)
+    # price_comparison.priceComparison(product_name)
 
     while True:
         question = input("\nEnter your question about the product (or 'quit' to exit): ")
