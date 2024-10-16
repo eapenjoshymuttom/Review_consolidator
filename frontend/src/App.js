@@ -20,6 +20,7 @@ export default function App() {
     completion: false,
   });
   const [activeTab, setActiveTab] = useState('ask');
+  const [error, setError] = useState('');
 
   const fetchData = async (endpoint, data, loadingKey) => {
     setLoading((prev) => ({ ...prev, [loadingKey]: true }));
@@ -37,6 +38,7 @@ export default function App() {
       return await response.json();
     } catch (error) {
       console.error(`Error fetching data from ${endpoint}:`, error);
+      setError('An error occurred while fetching data.');
     } finally {
       setLoading((prev) => ({ ...prev, [loadingKey]: false }));
     }
@@ -44,18 +46,27 @@ export default function App() {
 
   const getProductSummary = async () => {
     const data = await fetchData('/product_summary', { product_name: productName }, 'summary');
-    if (data) setSummary(data.summary);
+    if (data) {
+      if (data.summary) {
+        setSummary(data.summary);
+        setError('');
+      } else {
+        setSummary('');
+        setError('No product or review found.');
+      }
+    }
   };
 
   const resetState = () => {
     setProductName('');
     setSummary('');
     setActiveTab('ask');
+    setError('');
   };
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
-      {!summary ? (
+      {!summary && !error ? (
         <ProductInput
           productName={productName}
           setProductName={setProductName}
@@ -64,7 +75,7 @@ export default function App() {
         />
       ) : (
         <div>
-          <Summary productName={productName} summary={summary} />
+          <Summary productName={productName} summary={summary} error={error} />
           <div className="p-4 bg-white rounded-lg shadow-md">
             <div className="flex justify-around mb-4">
               <button
