@@ -192,7 +192,7 @@ export default function App() {
                 />
                 <button
                   onClick={getTextCompletion}
-                  className="bg-teal-600 text-white p-3 rounded-lg shadow-md hover:bg-teal-700 transition mb-4"
+                  className="bg-teal-600 mr-10 text-white p-3 rounded-lg shadow-md hover:bg-teal-700 transition mb-4"
                   disabled={loading.completion}
                 >
                   {loading.completion ? 'Loading...' : 'Complete Text'}
@@ -245,7 +245,7 @@ export default function App() {
                 />
                 <button
                   onClick={personalizeReviewStyle}
-                  className="bg-purple-600 text-white p-3 rounded-lg shadow-md hover:bg-purple-700 transition mb-4"
+                  className="bg-purple-600 mr-10 text-white p-3 rounded-lg shadow-md hover:bg-purple-700 transition mb-4"
                   disabled={loading.style}
                 >
                   {loading.style ? 'Loading...' : 'Personalize Review Style'}
