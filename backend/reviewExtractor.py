@@ -117,7 +117,7 @@ def getReviews(html_data):
 
 def extractReviews(product_name):
     # URL of the Amazon product page
-    url = linkExtractor.get_product_links(product_name)[0]
+    url = linkExtractor.get_product_links(product_name)[1]
 
     # URL of the Amazon review page
     reviews_url = modify_reviews_url(url)
