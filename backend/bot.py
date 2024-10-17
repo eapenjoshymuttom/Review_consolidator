@@ -27,7 +27,7 @@ client = Groq(api_key=groq_api_key)
 embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
 
 def create_db_from_reviews(reviews: list) -> FAISS:
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=50)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=25)
     docs = text_splitter.create_documents(reviews)
     db = FAISS.from_documents(docs, embeddings)
     return db
@@ -48,15 +48,28 @@ def get_response_from_query(db, query, k=8):
     docs = db.similarity_search(query, k=k)
     docs_page_content = " ".join([d.page_content for d in docs])
 
-    prompt = f'''You are a helpful assistant that can answer questions about product reviews. Answer the following question: {query} 
-                 Based on the following reviews: {docs_page_content} 
-                 Only use factual information from the reviews to answer the question.'''
+    prompt = f'''
+                    You are a highly capable and analytical assistant that helps summarize product reviews accurately. Below, you'll find a set of customer reviews about a specific product.
+                    Your task is to generate a detailed and comprehensive summary focusing on three main aspects:
+                    1. **Key Product Features**: Identify and highlight the most commonly mentioned features of the product, such as its performance, design, durability, battery life, display, etc.
+                        Be sure to include both positive aspects and standout features that multiple users have praised.
+                    2. **Common Problems or Complaints**: List any recurring issues or problems reported by users.
+                        These may include concerns about product quality, performance failures, design flaws, shipping problems, or any other negative experiences mentioned in the reviews.
+                    3. **Overall Rating**: Based on the overall sentiment of the reviews, assign the product a rating out of 5, with 5 being excellent and 1 being very poor.
+                        This rating should reflect the general customer satisfaction with the product.
+                    Make sure to summarize the information in a clear, concise manner using only factual data from the reviews.
+                    Your analysis should be structured into three sections: 'Features,' 'Problems,' and 'Rating,' with bullet points under the first two categories. Use neutral and professional language.
+                    And if the provided reviews do not mention any specific features or problems, you can still generate a summary based on the available information.
+                    Here are the customer reviews: {docs_page_content}.
+                    Even if the provided customer reviews are incomplete or repetition of the same phrases, you should still generate a summary based on the available information.
+                    Provide the summary and rating now.'''
+
 
     completion = client.chat.completions.create(
         model="llama3-70b-8192",
         messages=[{"role": "user", "content": prompt}],
         temperature=1.66,
-        max_tokens=3990,
+        max_tokens=4590,
         top_p=1,
         stream=True,
         stop=None,

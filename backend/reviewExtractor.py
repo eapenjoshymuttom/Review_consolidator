@@ -116,33 +116,30 @@ def getReviews(html_data):
     return data_dicts
 
 def extractReviews(product_name):
-    # URL of the Amazon product page
-    url = linkExtractor.get_product_links(product_name)[1]
-
-    # URL of the Amazon review page
-    reviews_url = modify_reviews_url(url)
-
-    # Define the number of pages to scrape (initial assumption)
-    len_page = 10
-
-    # Grab all HTML data
-    html_datas = reviewsHtml(reviews_url, url, len_page)
+    # Get all product links
+    product_links = linkExtractor.get_product_links(product_name)
 
     # Create an empty list to hold all reviews data
-    reviews = []
+    all_reviews = []
 
-    # Iterate over all HTML pages and gather review data
-    for html_data in html_datas:
-        review = getReviews(html_data)
-        if review:
-            reviews += review  # Only append reviews if the page contains reviews
+    # Iterate through each product link
+    for url in product_links:
+        # URL of the Amazon review page
+        reviews_url = modify_reviews_url(url)
 
-    # Create a DataFrame with reviews data
-    df_reviews = pd.DataFrame(reviews)
+        # Grab all HTML data
+        html_datas = reviewsHtml(reviews_url, url, len_page)
 
-    # Create a DataFrame with reviews data
-    df_reviews = pd.DataFrame(reviews)
+        # Iterate over all HTML pages and gather review data
+        for html_data in html_datas:
+            reviews = getReviews(html_data)
+            if reviews:
+                all_reviews.extend(reviews)  # Append reviews to the master list
 
+    # Create a DataFrame with all reviews data
+    df_reviews = pd.DataFrame(all_reviews)
+
+    # Print the DataFrame
     print(df_reviews)
 
     # Save data to CSV
@@ -150,4 +147,3 @@ def extractReviews(product_name):
     value = df_reviews['Description'].tolist()
 
     return value
-
