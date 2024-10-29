@@ -1,8 +1,10 @@
 **Review Summarizer**
 
-Review Summarizer is a web-based application designed to automate the summarization of Amazon product reviews, providing users with meaningful, concise summaries to help make informed purchasing decisions. By leveraging web scraping, natural language processing (NLP), and machine learning, Review Summarizer efficiently distills product reviews and allows users to interact with a chatbot powered by Groq Llama3 for additional product insights.
+Review Summarizer is a web-based application designed to automate the summarization of Amazon product reviews, providing users with meaningful, concise summaries to help make informed purchasing decisions.
+By leveraging web scraping, natural language processing (NLP), and machine learning, Review Summarizer efficiently distills product reviews and allows users to interact with a chatbot powered by Groq Llama3 for additional product insights.
 
 **Features**
+
   Web Scraping: Retrieves reviews from Amazon using aiohttp and BeautifulSoup.
   Summarization: Uses NLP techniques to generate concise summaries that focus on key product details.
   Chatbot Integration: Includes a chatbot powered by Groq Llama3, enabling users to ask product-related questions.
