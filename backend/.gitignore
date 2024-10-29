@@ -5,3 +5,4 @@ myenv/
 /product_dbs/
 /faiss_index.pkl
 /reviews.csv
+/amazon_reviews_us_Wireless_v1_00.tsv
