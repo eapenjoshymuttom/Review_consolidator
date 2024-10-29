@@ -5,3 +5,5 @@ myenv/
 /product_dbs/
 /faiss_index.pkl
 /reviews.csv
+/amazon_reviews_20241029_124313.csv
+reviews/
