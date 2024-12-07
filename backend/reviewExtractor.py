@@ -149,7 +149,7 @@ def getReviews(html_data):
     
     return data_dicts
 
-def extractReviews(product_name, len_page=10):
+def extractReviews(product_name, len_page=5):
     """
     Main function to extract reviews from Amazon
     Args:

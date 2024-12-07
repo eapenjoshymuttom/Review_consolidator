@@ -27,8 +27,9 @@ client = Groq(api_key=groq_api_key)
 embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
 
 def create_db_from_reviews(reviews: list) -> FAISS:
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=25)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=8)
     docs = text_splitter.create_documents(reviews)
+    print("number of docs:", len(docs))
     db = FAISS.from_documents(docs, embeddings)
     return db
 
@@ -44,7 +45,7 @@ def load_db(product_name):
     with open(filename, "rb") as f:
         return pickle.load(f)
 
-def get_response_from_query(db, query, k=8):
+def get_response_from_query(db, query, k):
     docs = db.similarity_search(query, k=k)
     docs_page_content = " ".join([d.page_content for d in docs])
 
@@ -83,7 +84,7 @@ def get_response_from_query(db, query, k=8):
 
 def get_product_summary(db):
     summary_query = "Provide a comprehensive summary of the product based on all reviews."
-    summary, _ = get_response_from_query(db, summary_query, k=10)  # Use more reviews for the summary
+    summary, _ = get_response_from_query(db, summary_query, k=100)  # Use more reviews for the summary
     return summary
 
 def get_or_create_db(product_name):
