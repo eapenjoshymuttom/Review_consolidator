@@ -149,7 +149,7 @@ def getReviews(html_data):
     
     return data_dicts
 
-def extractReviews(product_name, len_page=10):
+def extractReviews(product_name, len_page=5):
     """
     Main function to extract reviews from Amazon
     Args:
@@ -189,7 +189,7 @@ def extractReviews(product_name, len_page=10):
         os.makedirs('reviews')
     # Save data to CSV with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f'reviews/reviews_{timestamp}.csv'
+    filename = f'reviews/{product_name}_reviews_{timestamp}.csv'
     df_reviews.to_csv(filename, index=False)
     print(f"Saved {len(all_reviews)} reviews to {filename}")
     
