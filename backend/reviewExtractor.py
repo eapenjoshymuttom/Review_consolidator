@@ -6,6 +6,17 @@ from datetime import datetime
 import time
 import random
 import linkExtractor
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import sent_tokenize
+from textblob import TextBlob
+
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('punkt_tab')
+
 
 # Header to set the requests as a browser request
 headers = {
@@ -149,6 +160,41 @@ def getReviews(html_data):
     
     return data_dicts
 
+def clean_text(text):
+    text = re.sub(r'<[^>]+>', '', text)  # Remove HTML tags
+    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)  # Remove special characters
+    text = text.lower().strip()  # Convert to lowercase and strip whitespace
+    return text
+
+def remove_stopwords(text):
+    stop_words = set(stopwords.words('english'))
+    return ' '.join(word for word in text.split() if word not in stop_words)
+
+def lemmatize_text(text):
+    lemmatizer = WordNetLemmatizer()
+    return ' '.join(lemmatizer.lemmatize(word) for word in text.split())
+
+def split_sentences(reviews):
+    sentences = []
+    for review in reviews:
+        sentences.extend(sent_tokenize(review))
+    return sentences
+
+def remove_duplicates(reviews):
+    return list(set(reviews))
+
+def filter_short_reviews(reviews, min_length=10):
+    return [review for review in reviews if len(review.split()) >= min_length]
+
+def preprocess_reviews(reviews):
+    reviews = [clean_text(review) for review in reviews]
+    reviews = [remove_stopwords(review) for review in reviews]
+    reviews = [lemmatize_text(review) for review in reviews]
+    reviews = split_sentences(reviews)
+    reviews = remove_duplicates(reviews)
+    reviews = filter_short_reviews(reviews)
+    return reviews
+
 def extractReviews(product_name, len_page=5):
     """
     Main function to extract reviews from Amazon
@@ -158,7 +204,7 @@ def extractReviews(product_name, len_page=5):
     """
     # Get all product links
     product_links = linkExtractor.get_product_links(product_name)
-    
+
     # Create an empty list to hold all reviews data
     all_reviews = []
     
@@ -193,8 +239,11 @@ def extractReviews(product_name, len_page=5):
     df_reviews.to_csv(filename, index=False)
     print(f"Saved {len(all_reviews)} reviews to {filename}")
     
-    value = df_reviews['Description'].tolist()
-    return value
+    # Preprocess reviews
+    reviews = df_reviews['Description'].tolist()
+    reviews = preprocess_reviews(reviews)
+    
+    return reviews
 
 # Example usage
 # if __name__ == "__main__":

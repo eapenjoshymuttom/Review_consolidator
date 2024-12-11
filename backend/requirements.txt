@@ -8,6 +8,8 @@ lxml
 
 # AI and NLP
 langchain
+nltk
+textblob
 openai
 faiss-cpu
 transformers

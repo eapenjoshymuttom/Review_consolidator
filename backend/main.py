@@ -51,10 +51,13 @@ async def options_handler():
 @app.post("/product_summary")
 async def get_product_summary(product_query: ProductQuery):
     try:
-        db = bot.get_or_create_db(product_query.product_name)
-        summary = bot.get_product_summary(db)
+        name = product_query.product_name
+        db = bot.get_or_create_db(name)
+        summary = bot.get_product_summary(db, name)
         return {"summary": summary}
     except Exception as e:
+        print(f"Error in get_product_summary: {str(e)}")  # Add this line for debugging
+        print(traceback.format_exc())  # Print full traceback
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/answer_query")
