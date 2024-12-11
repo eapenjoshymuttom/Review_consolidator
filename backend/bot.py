@@ -82,9 +82,10 @@ def get_response_from_query(db, query, k):
 
     return response, docs
 
-def get_product_summary(db):
-    summary_query = "Provide a comprehensive summary of the product based on all reviews."
-    summary, _ = get_response_from_query(db, summary_query, k=100)  # Use more reviews for the summary
+def get_product_summary(db, product_name):
+    summary_query = f"""Provide a comprehensive summary of the product based on all reviews of the product {product_name}.
+                        Include key product features, common problems or complaints, sentiment, build quality, user experience, ease of use, etc. and an overall rating out of 5."""
+    summary, _ = get_response_from_query(db, summary_query, k=300)  # Use more reviews for the summary
     return summary
 
 def get_or_create_db(product_name):
@@ -104,7 +105,7 @@ def main(product_name):
 
     # Get and print product summary
     print("\nProduct Summary:")
-    summary = get_product_summary(db)
+    summary = get_product_summary(db, product_name)
     print(summary)
     # price_comparison.priceComparison(product_name)
 
