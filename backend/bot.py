@@ -45,8 +45,8 @@ def load_db(product_name):
     with open(filename, "rb") as f:
         return pickle.load(f)
 
-def get_response_from_query(db, query, k):
-    docs = db.similarity_search(query, k=k)
+def get_response_from_query(db, query):
+    docs = db.similarity_search(query, k=150)
     docs_page_content = " ".join([d.page_content for d in docs])
 
     prompt = f'''
@@ -85,7 +85,7 @@ def get_response_from_query(db, query, k):
 def get_product_summary(db, product_name):
     summary_query = f"""Provide a comprehensive summary of the product based on all reviews of the product {product_name}.
                         Include key product features, common problems or complaints, sentiment, build quality, user experience, ease of use, etc. and an overall rating out of 5."""
-    summary, _ = get_response_from_query(db, summary_query, k=300)  # Use more reviews for the summary
+    summary, _ = get_response_from_query(db, summary_query)  # Use more reviews for the summary
     return summary
 
 def get_or_create_db(product_name):
