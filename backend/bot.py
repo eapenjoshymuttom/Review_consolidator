@@ -50,43 +50,46 @@ def get_response_from_query(db, query):
     docs_page_content = " ".join([d.page_content for d in docs])
 
     prompt = f'''
-                    You are a highly capable and analytical assistant that helps summarize product reviews accurately. Below, you'll find a set of customer reviews about a specific product.
-                    Your task is to generate a detailed and comprehensive summary focusing on three main aspects:
-                    1. **Key Product Features**: Identify and highlight the most commonly mentioned features of the product, such as its performance, design, durability, battery life, display, etc.
-                        Be sure to include both positive aspects and standout features that multiple users have praised.
-                    2. **Common Problems or Complaints**: List any recurring issues or problems reported by users.
-                        These may include concerns about product quality, performance failures, design flaws, shipping problems, or any other negative experiences mentioned in the reviews.
-                    3. **Overall Rating**: Based on the overall sentiment of the reviews, assign the product a rating out of 5, with 5 being excellent and 1 being very poor.
-                        This rating should reflect the general customer satisfaction with the product.
-                    Make sure to summarize the information in a clear, concise manner using only factual data from the reviews.
-                    Your analysis should be structured into three sections: 'Features,' 'Problems,' and 'Rating,' with bullet points under the first two categories. Use neutral and professional language.
-                    And if the provided reviews do not mention any specific features or problems, you can still generate a summary based on the available information.
-                    Here are the customer reviews: {docs_page_content}.
-                    Even if the provided customer reviews are incomplete or repetition of the same phrases, you should still generate a summary based on the available information.
-                    Provide the summary and rating now.'''
-
+                You are an assistant that answers questions based on product reviews. Below are customer reviews about a product.
+                Answer the following question based on the reviews:
+                Question: {query}
+                Here are the reviews: {docs_page_content}
+                Provide a concise and specific answer to the question.'''
 
     completion = client.chat.completions.create(
         model="llama3-70b-8192",
         messages=[{"role": "user", "content": prompt}],
-        temperature=1.66,
-        max_tokens=4590,
+        temperature=1.2,
+        max_tokens=1500,
         top_p=1,
-        stream=True,
-        stop=None,
     )
 
-    response = ""
-    for chunk in completion:
-        response += chunk.choices[0].delta.content or ""
-
+    response = completion.choices[0].message.content.strip()
     return response, docs
 
 def get_product_summary(db, product_name):
-    summary_query = f"""Provide a comprehensive summary of the product based on all reviews of the product {product_name}.
-                        Include key product features, common problems or complaints, sentiment, build quality, user experience, ease of use, etc. and an overall rating out of 5."""
-    summary, _ = get_response_from_query(db, summary_query)  # Use more reviews for the summary
-    return summary
+    docs = db.similarity_search(product_name, k=150)
+    docs_page_content = " ".join([d.page_content for d in docs])
+
+    prompt = f'''
+                You are an assistant that summarizes product reviews. Below are customer reviews about a product.
+                Summarize the reviews focusing on:
+                1. **Key Features**: Highlight commonly mentioned features.
+                2. **Problems**: List recurring issues.
+                3. **Rating**: Provide an overall rating out of 5.
+                Here are the reviews: {docs_page_content}
+                Provide the summary and rating now.'''
+
+    completion = client.chat.completions.create(
+        model="llama3-70b-8192",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=1.2,
+        max_tokens=1500,
+        top_p=1,
+    )
+
+    response = completion.choices[0].message.content.strip()
+    return response
 
 def get_or_create_db(product_name):
     try:
@@ -100,6 +103,16 @@ def get_or_create_db(product_name):
         print(f"New database created and saved for {product_name}.")
     return db
 
+def handle_user_queries(db):
+    while True:
+        question = input("\nEnter your question about the product (or 'quit' to exit): ")
+        if question.lower() == 'quit':
+            print("Exiting the query session.")
+            break
+
+        answer, _ = get_response_from_query(db, question)
+        print("\nAnswer:", answer)
+
 def main(product_name):
     db = get_or_create_db(product_name)
 
@@ -109,13 +122,7 @@ def main(product_name):
     print(summary)
     # price_comparison.priceComparison(product_name)
 
-    while True:
-        question = input("\nEnter your question about the product (or 'quit' to exit): ")
-        if question.lower() == 'quit':
-            break
-
-        answer, _ = get_response_from_query(db, question)
-        print("\nAnswer:", answer)
+    handle_user_queries(db)
 
 if __name__ == "__main__":
     product_name = input("Enter the product name: ")

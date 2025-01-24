@@ -5,12 +5,19 @@ import Summary from './components/Summary';
 import AskQuestions from './components/AskQuestions';
 import WriteReview from './components/WriteReview';
 import PersonalizeReview from './components/PersonalizeReview';
+import { ReviewChart } from './components/ReviewChart';
 
 const API_URL = 'http://localhost:8000';
+
+const chartData = [
+  { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
+]
 
 export default function App() {
   const [productName, setProductName] = useState('');
   const [summary, setSummary] = useState('');
+  const [query, setQuery] = useState('');
+  const [queryHistory, setQueryHistory] = useState([]);
   const [loading, setLoading] = useState({
     summary: false,
     query: false,
@@ -57,9 +64,24 @@ export default function App() {
     }
   };
 
+  const answerQuery = async () => {
+    const data = await fetchData('/answer_query', { product_name: productName, query }, 'query');
+    if (data) {
+      if (data.answer) {
+        setQueryHistory((prev) => [...prev, { question: query, answer: data.answer }]);
+        setQuery('');
+        setError('');
+      } else {
+        setError('No answer found.');
+      }
+    }
+  };
+
   const resetState = () => {
     setProductName('');
     setSummary('');
+    setQuery('');
+    setQueryHistory([]);
     setActiveTab('ask');
     setError('');
   };
@@ -76,6 +98,7 @@ export default function App() {
       ) : (
         <div>
           <Summary productName={productName} summary={summary} error={error} />
+          <ReviewChart data={chartData} /> 
           <div className="p-4 bg-white rounded-lg shadow-md">
             <div className="flex justify-around mb-4">
               <button
@@ -99,7 +122,14 @@ export default function App() {
             </div>
 
             {activeTab === 'ask' && (
-              <AskQuestions productName={productName} fetchData={fetchData} loading={loading} />
+              <AskQuestions
+                productName={productName}
+                query={query}
+                setQuery={setQuery}
+                answerQuery={answerQuery}
+                loading={loading}
+                queryHistory={queryHistory}
+              />
             )}
 
             {activeTab === 'review' && (
