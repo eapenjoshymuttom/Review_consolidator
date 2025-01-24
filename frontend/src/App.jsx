@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-// import 'tailwindcss/tailwind.css';
+import 'tailwindcss/tailwind.css';
 import ProductInput from './components/ProductInput';
 import Summary from './components/Summary';
 import AskQuestions from './components/AskQuestions';
@@ -16,6 +16,8 @@ const chartData = [
 export default function App() {
   const [productName, setProductName] = useState('');
   const [summary, setSummary] = useState('');
+  const [query, setQuery] = useState('');
+  const [queryHistory, setQueryHistory] = useState([]);
   const [loading, setLoading] = useState({
     summary: false,
     query: false,
@@ -62,18 +64,30 @@ export default function App() {
     }
   };
 
+  const answerQuery = async () => {
+    const data = await fetchData('/answer_query', { product_name: productName, query }, 'query');
+    if (data) {
+      if (data.answer) {
+        setQueryHistory((prev) => [...prev, { question: query, answer: data.answer }]);
+        setQuery('');
+        setError('');
+      } else {
+        setError('No answer found.');
+      }
+    }
+  };
+
   const resetState = () => {
     setProductName('');
     setSummary('');
+    setQuery('');
+    setQueryHistory([]);
     setActiveTab('ask');
     setError('');
   };
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
-      {/* 
-      <ReviewChart data={chartData} /> 
-      */}
       {!summary && !error ? (
         <ProductInput
           productName={productName}
@@ -84,6 +98,7 @@ export default function App() {
       ) : (
         <div>
           <Summary productName={productName} summary={summary} error={error} />
+          <ReviewChart data={chartData} /> 
           <div className="p-4 bg-white rounded-lg shadow-md">
             <div className="flex justify-around mb-4">
               <button
@@ -107,7 +122,14 @@ export default function App() {
             </div>
 
             {activeTab === 'ask' && (
-              <AskQuestions productName={productName} fetchData={fetchData} loading={loading} />
+              <AskQuestions
+                productName={productName}
+                query={query}
+                setQuery={setQuery}
+                answerQuery={answerQuery}
+                loading={loading}
+                queryHistory={queryHistory}
+              />
             )}
 
             {activeTab === 'review' && (
