@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import 'tailwindcss/tailwind.css';
+// import 'tailwindcss/tailwind.css';
 import ProductInput from './components/ProductInput';
 import Summary from './components/Summary';
 import AskQuestions from './components/AskQuestions';
 import WriteReview from './components/WriteReview';
 import PersonalizeReview from './components/PersonalizeReview';
+import { ReviewChart } from './components/ReviewChart';
 
 const API_URL = 'http://localhost:8000';
+
+const chartData = [
+  { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
+]
 
 export default function App() {
   const [productName, setProductName] = useState('');
@@ -66,6 +71,9 @@ export default function App() {
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
+      {/* 
+      <ReviewChart data={chartData} /> 
+      */}
       {!summary && !error ? (
         <ProductInput
           productName={productName}
