@@ -98,7 +98,8 @@ export default function App() {
       ) : (
         <div>
           <Summary productName={productName} summary={summary} error={error} />
-          <ReviewChart data={chartData} /> 
+          {/* <ReviewChart data={chartData} /> */}
+           
           <div className="p-4 bg-white rounded-lg shadow-md">
             <div className="flex justify-around mb-4">
               <button

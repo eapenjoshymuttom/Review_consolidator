@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function WriteReview({ productName, fetchData, loading }) {
   const [reviewText, setReviewText] = useState('');
@@ -50,7 +51,7 @@ export default function WriteReview({ productName, fetchData, loading }) {
       {feedback && (
         <div className="mt-4">
           <h3 className="text-lg font-bold mb-2">Review Feedback</h3>
-          <p className="text-gray-700">{feedback}</p>
+          <ReactMarkdown>{feedback}</ReactMarkdown>
         </div>
       )}
     </div>
