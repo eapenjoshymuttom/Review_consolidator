@@ -7,3 +7,5 @@ myenv/
 /reviews.csv
 /amazon_reviews_20241029_124313.csv
 reviews/
+review_bot.log
+review_scraper.log

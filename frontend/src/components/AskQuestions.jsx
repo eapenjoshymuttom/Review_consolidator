@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function AskQuestions({ productName, query, setQuery, answerQuery, loading, queryHistory }) {
   return (
@@ -24,7 +25,7 @@ export default function AskQuestions({ productName, query, setQuery, answerQuery
           <div className="p-4 bg-gray-200 rounded">
             <strong>Q:</strong> {queryHistory[queryHistory.length - 1].question}
             <br />
-            <strong>A:</strong> {queryHistory[queryHistory.length - 1].answer}
+            <strong>A:</strong> <ReactMarkdown>{queryHistory[queryHistory.length - 1].answer}</ReactMarkdown>
           </div>
         </div>
       )}
@@ -36,7 +37,7 @@ export default function AskQuestions({ productName, query, setQuery, answerQuery
               <li key={index} className="mb-2">
                 <strong>Q:</strong> {item.question}
                 <br />
-                <strong>A:</strong> {item.answer}
+                <strong>A:</strong> <ReactMarkdown>{item.answer}</ReactMarkdown>
               </li>
             ))}
           </ul>

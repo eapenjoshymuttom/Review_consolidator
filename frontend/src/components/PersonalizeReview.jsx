@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function PersonalizeReview({ productName, fetchData, loading }) {
   const [userPreferences, setUserPreferences] = useState({
@@ -56,7 +57,7 @@ export default function PersonalizeReview({ productName, fetchData, loading }) {
       {stylesuggestion && (
         <div className="mt-4">
           <h3 className="text-lg font-bold mb-2">Personalized Style Suggestion</h3>
-          <p className="text-gray-700">{stylesuggestion}</p>
+          <ReactMarkdown>{stylesuggestion}</ReactMarkdown>
         </div>
       )}
       <button
@@ -69,7 +70,7 @@ export default function PersonalizeReview({ productName, fetchData, loading }) {
       {template && (
         <div className="mt-4">
           <h3 className="text-lg font-bold mb-2">Review Template</h3>
-          <pre className="whitespace-pre-wrap text-gray-700">{template}</pre>
+          <ReactMarkdown>{template}</ReactMarkdown>
         </div>
       )}
     </div>

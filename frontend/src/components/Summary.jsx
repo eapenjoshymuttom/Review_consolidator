@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function Summary({ productName, summary, error }) {
   return (
@@ -7,7 +8,7 @@ export default function Summary({ productName, summary, error }) {
       {error ? (
         <p className="text-red-600">{error}</p>
       ) : (
-        <p className="text-gray-700">{summary}</p>
+        <ReactMarkdown>{summary}</ReactMarkdown>
       )}
     </div>
   );
