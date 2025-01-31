@@ -171,11 +171,11 @@ export default function App() {
               )}
 
               {activeTab === 'review' && (
-                <WriteReview productName={productName} fetchData={fetchData} loading={loading} />
+                <WriteReview productName={productName} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
 
               {activeTab === 'personalize' && (
-                <PersonalizeReview productName={productName} fetchData={fetchData} loading={loading} />
+                <PersonalizeReview productName={productName} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
             </div>
             <div className="flex justify-center mt-6">

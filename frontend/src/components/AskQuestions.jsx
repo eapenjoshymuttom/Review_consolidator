@@ -2,23 +2,30 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 
 export default function AskQuestions({ productName, query, setQuery, answerQuery, loading, queryHistory }) {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    answerQuery();
+  };
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Ask Questions about {productName}</h2>
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Enter your question"
-        className="w-full p-2 mb-4 border rounded"
-      />
-      <button
-        onClick={answerQuery}
-        className="bg-blue-600 text-white p-2 rounded-lg shadow-md hover:bg-blue-700 transition"
-        disabled={loading.query}
-      >
-        {loading.query ? 'Loading...' : 'Get Answer'}
-      </button>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Enter your question"
+          className="w-full p-2 mb-4 border rounded"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white p-2 rounded-lg shadow-md hover:bg-blue-700 transition"
+          disabled={loading.query}
+        >
+          {loading.query ? 'Loading...' : 'Get Answer'}
+        </button>
+      </form>
       {queryHistory.length > 0 && (
         <div className="mt-4">
           <h3 className="font-bold mb-2">Latest Answer:</h3>

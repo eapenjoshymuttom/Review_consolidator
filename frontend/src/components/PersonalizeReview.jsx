@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-export default function PersonalizeReview({ productName, fetchData, loading }) {
+export default function PersonalizeReview({ productName, fetchData, loading, setLoading }) {
   const [userPreferences, setUserPreferences] = useState({
     writing_style: '',
     preferred_length: '',
@@ -11,7 +11,7 @@ export default function PersonalizeReview({ productName, fetchData, loading }) {
   const [template, setTemplate] = useState('');
 
   const personalizeReviewStyle = async () => {
-    const data = await fetchData('/personalize_review_style', userPreferences, 'style');
+    const data = await fetchData('/personalize_review_style', userPreferences, 'style', setLoading);
     if (data) setStyleSuggestion(data.style_suggestion);
   };
 
@@ -19,7 +19,7 @@ export default function PersonalizeReview({ productName, fetchData, loading }) {
     const data = await fetchData('/generate_review_template', {
       product_name: productName,
       ...userPreferences,
-    }, 'template');
+    }, 'template', setLoading);
     if (data) setTemplate(data.template);
   };
 
@@ -47,26 +47,28 @@ export default function PersonalizeReview({ productName, fetchData, loading }) {
         placeholder="Focus areas (comma-separated)"
         className="border p-3 rounded-lg shadow-sm w-full mb-4"
       />
-      <button
-        onClick={personalizeReviewStyle}
-        className="bg-purple-600 mr-10 text-white p-3 rounded-lg shadow-md hover:bg-purple-700 transition mb-4"
-        disabled={loading.style}
-      >
-        {loading.style ? 'Loading...' : 'Personalize Review Style'}
-      </button>
+      <div className="flex space-x-4">
+        <button
+          onClick={personalizeReviewStyle}
+          className="bg-purple-600 text-white p-3 rounded-lg shadow-md hover:bg-purple-700 transition mb-4"
+          disabled={loading.style}
+        >
+          {loading.style ? 'Loading...' : 'Personalize Review Style'}
+        </button>
+        <button
+          onClick={generateReviewTemplate}
+          className="bg-indigo-600 text-white p-3 rounded-lg shadow-md hover:bg-indigo-700 transition mb-4"
+          disabled={loading.template}
+        >
+          {loading.template ? 'Loading...' : 'Generate Review Template'}
+        </button>
+      </div>
       {stylesuggestion && (
         <div className="mt-4">
           <h3 className="text-lg font-bold mb-2">Personalized Style Suggestion</h3>
           <ReactMarkdown>{stylesuggestion}</ReactMarkdown>
         </div>
       )}
-      <button
-        onClick={generateReviewTemplate}
-        className="bg-indigo-600 text-white p-3 rounded-lg shadow-md hover:bg-indigo-700 transition mt-4"
-        disabled={loading.template}
-      >
-        {loading.template ? 'Loading...' : 'Generate Review Template'}
-      </button>
       {template && (
         <div className="mt-4">
           <h3 className="text-lg font-bold mb-2">Review Template</h3>
