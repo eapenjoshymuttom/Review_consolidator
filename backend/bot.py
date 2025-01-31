@@ -34,17 +34,18 @@ def create_db_from_reviews(reviews: list) -> FAISS:
     db = FAISS.from_documents(docs, embeddings)
     return db
 
-def save_db(db, product_name):
+def save_db(db, product_name, price, image_url):
     if not os.path.exists('product_dbs'):
         os.makedirs('product_dbs')
     filename = f"product_dbs/{product_name.replace(' ', '_').lower()}_faiss_index.pkl"
     with open(filename, "wb") as f:
-        pickle.dump(db, f)
+        pickle.dump({'db': db, 'price': price, 'image_url': image_url}, f)
 
 def load_db(product_name):
     filename = f"product_dbs/{product_name.replace(' ', '_').lower()}_faiss_index.pkl"
     with open(filename, "rb") as f:
-        return pickle.load(f)
+        data = pickle.load(f)
+        return data['db'], data['price'], data['image_url']
 
 def get_response_from_query(db, query):
     docs = db.similarity_search(query, k=150)
@@ -94,16 +95,15 @@ def get_product_summary(db, product_name):
 
 def get_or_create_db(product_name):
     try:
-        db = load_db(product_name)
+        db, price, image_url = load_db(product_name)
         print(f"Loaded existing FAISS database for {product_name}.")
-        price, image_url = reviewExtractor.get_product_details(product_name)
     except FileNotFoundError:
         print(f"No existing database found for {product_name}. Creating new database from reviews.")
         result = reviewExtractor.extractReviews(product_name)
         
         # Use processed reviews directly
         db = create_db_from_reviews(result['processed_reviews'])
-        save_db(db, product_name)
+        save_db(db, product_name, result['price'], result['image_url'])
         
         price = result['price']
         image_url = result['image_url']
@@ -174,7 +174,7 @@ def handle_user_queries(db):
         print("\nAnswer:", answer)
 
 def main(product_name):
-    db = get_or_create_db(product_name)
+    db, price, image_url = get_or_create_db(product_name)
 
     # Get and print product summary
     print("\nProduct Summary:")

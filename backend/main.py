@@ -54,7 +54,7 @@ async def get_product_summary(product_query: ProductQuery):
     """Fetch product summary, price, and image."""
     try:
         name = product_query.product_name
-        db, price, image_url = bot.get_or_create_db(name)  # No more unpacking error
+        db, price, image_url = bot.get_or_create_db(name)
         if db is None:
             raise HTTPException(status_code=404, detail="No reviews found for this product.")
         
@@ -74,12 +74,17 @@ async def get_product_summary(product_query: ProductQuery):
 @app.post("/component_ratings")
 async def get_component_ratings(product_query: ProductQuery):
     try:
-        db, _, _ = bot.get_or_create_db(product_query.product_name)
+        db, price, image_url = bot.get_or_create_db(product_query.product_name)
         if db is None:
             raise HTTPException(status_code=404, detail="No reviews found for this product.")
         
         ratings = bot.extract_component_ratings(db, product_query.product_name)
-        return ratings
+        print(f"Component ratings: {ratings}")  # Add logging
+        return {
+            "ratings": ratings,
+            "price": price,
+            "image_url": image_url
+        }
     except Exception as e:
         print(f"Error in get_component_ratings: {str(e)}")
         print(traceback.format_exc())

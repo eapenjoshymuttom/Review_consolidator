@@ -64,7 +64,8 @@ export default function App() {
         // Fetch component ratings
         const ratingsData = await fetchData('/component_ratings', { product_name: productName }, 'ratings', setLoading);
         if (ratingsData) {
-          setComponentRatings(ratingsData);
+          console.log('Component Ratings:', ratingsData.ratings);  // Add logging
+          setComponentRatings(ratingsData.ratings || { component_ratings: [], overall_rating: 0 });
         }
       } else {
         setSummary('');
@@ -170,11 +171,11 @@ export default function App() {
               )}
 
               {activeTab === 'review' && (
-                <WriteReview productName={productName} fetchData={fetchData} loading={loading} />
+                <WriteReview productName={productName} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
 
               {activeTab === 'personalize' && (
-                <PersonalizeReview productName={productName} fetchData={fetchData} loading={loading} />
+                <PersonalizeReview productName={productName} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
             </div>
             <div className="flex justify-center mt-6">
