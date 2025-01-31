@@ -6,216 +6,253 @@ import os
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-import linkExtractor
+from textblob import TextBlob
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import sent_tokenize
-from textblob import TextBlob
+from linkExtractor import get_product_links
 
+# Download necessary NLTK datasets
 nltk.download('stopwords')
 nltk.download('wordnet')
-nltk.download('punkt_tab')
+nltk.download('punkt')
 
-# Header to set the requests as a browser request
+# Headers to avoid request blocking
 headers = {
-    'authority': 'www.amazon.com',
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'accept-language': 'en-US,en;q=0.9,bn;q=0.8',
-    'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="102", "Google Chrome";v="102"',
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
 
+# -------------------- REVIEW EXTRACTION --------------------
 def modify_reviews_url(reviews_url):
     """Convert product URL to reviews URL format"""
-    return reviews_url.replace("/dp/", "/product-reviews/")
+    return reviews_url.replace("/p/", "/product-reviews/")
 
-def get_base_url(url):
-    """Extract the base URL without pagination parameters"""
-    if '&pageNumber=' in url:
-        return url.split('&pageNumber=')[0]
-    return url
-
-def reviewsHtml(reviews_url, url, len_page=None):
-    """
-    Extract HTML data from multiple pages of Amazon reviews
-    Args:
-        reviews_url: Base URL of the product reviews page
-        url: Original product URL
-        len_page: Maximum number of pages to scrape (None for all pages)
-    """
-    soups = []
-    page_no = 1
-
-    while True:
-        # Add random delay to avoid getting blocked
-        time.sleep(random.uniform(1, 3))
-
-        # Set page number in the request params
-        params = {
-            'ie': 'UTF8',
-            'reviewerType': 'all_reviews',
-            'filterByStar': 'critical',
-            'pageNumber': page_no,
-        }
-
+def get_reviews_from_page(html):
+    """Extract reviews from a single Flipkart page."""
+    reviews_data = []
+    review_containers = html.find_all('div', {'class': 'cPHDOP'})  # Flipkart review container
+    
+    for container in review_containers:
         try:
-            # Make request for each page
-            response = requests.get(url, headers=headers, params=params)
-
-            # Check if the request was successful
-            if response.status_code == 200:
-                # Save HTML object using BeautifulSoup and lxml parser
-                soup = BeautifulSoup(response.text, 'lxml')
-
-                # Check if there are any reviews on the page
-                if not soup.select('div[data-hook="review"]'):
-                    print(f"No more reviews found on page {page_no}. Stopping.")
-                    break
-
-                # Add single HTML page data to master list
-                soups.append(soup)
-                print(f"Successfully scraped page {page_no}")
-
-                # Break if we've reached len_page
-                if len_page and page_no >= len_page:
-                    break
-
-                page_no += 1
-
-            else:
-                print(f"Failed to fetch page {page_no}. Status code: {response.status_code}")
-                break
-
-        except requests.RequestException as e:
-            print(f"Error fetching page {page_no}: {e}")
-            break
-
-    return soups
-
-def getReviews(html_data):
-    data_dicts = []
-    boxes = html_data.select('div[data-hook="review"]')  # Updated selector
-
-    for box in boxes:
-        try:
-            # Name
-            name = box.select_one('.a-profile-name').text.strip()
-
-            # Stars
-            stars_element = box.select_one('.a-icon-star')
-            stars = stars_element.text.strip().split(' ')[0] if stars_element else 'N/A'
-
-            # Title
-            title = box.select_one('[data-hook="review-title"] span').text.strip()
-
-            # Date
-            date_element = box.select_one('[data-hook="review-date"]')
-            date = date_element.text.split('on ')[-1] if date_element else 'N/A'
-
-            # Description
-            description = box.select_one('[data-hook="review-body"] span').text.strip()
-
-            data_dicts.append({
+            # Extract rating
+            rating_div = container.find('div', {'class': 'XQDdHH Ga3i8K'})
+            rating = rating_div.text.strip() if rating_div else 'N/A'
+            
+            # Extract review title
+            title_div = container.find('p', {'class': 'z9E0IG'})
+            title = title_div.text.strip() if title_div else 'N/A'
+            
+            # Extract review text
+            review_div = container.find('div', {'class': 'ZmyHeo'})
+            review_text = review_div.find('div').text.strip() if review_div and review_div.find('div') else 'N/A'
+            
+            # Extract reviewer name
+            name_div = container.find('p', {'class': '_2NsDsF AwS1CA'})
+            name = name_div.text.strip() if name_div else 'N/A'
+            
+            # Extract review date
+            date_div = container.find('p', {'class': '_2NsDsF'})
+            date = date_div.text.strip() if date_div and not date_div.get('class') == '_2NsDsF AwS1CA' else 'N/A'
+            
+            # Extract certified buyer status
+            certified_div = container.find('p', {'class': 'MztJPv'})
+            is_certified = 'Yes' if certified_div and 'Certified Buyer' in certified_div.text else 'No'
+            
+            # Get helpful votes
+            helpful_div = container.find('span', {'class': 'tl9VpF'})
+            helpful_count = helpful_div.text.strip() if helpful_div else '0'
+            
+            reviews_data.append({
                 'Name': name,
-                'Stars': stars,
+                'Rating': rating,
                 'Title': title,
+                'Description': review_text,
                 'Date': date,
-                'Description': description
+                'Certified_Buyer': is_certified,
+                'Helpful_Votes': helpful_count
             })
             
         except Exception as e:
             print(f"Error processing review: {e}")
             continue
+    
+    return reviews_data
+
+def get_reviews(base_url, max_pages=10):
+    """Extract reviews from multiple pages."""
+    all_reviews = []
+    page = 1
+    
+    while page <= max_pages:
+        try:
+            # Construct page URL
+            page_url = f"{base_url}&page={page}" if page > 1 else base_url
+                
+            print(f"Fetching reviews from page {page}")
             
-    return data_dicts
+            response = requests.get(page_url, headers=headers)
+            if response.status_code != 200:
+                print(f"Failed to fetch page {page}. Status code: {response.status_code}")
+                break
+                
+            soup = BeautifulSoup(response.content, 'html.parser')
+            print(f"Page HTML length: {len(response.content)}")  # Debug info
+            
+            # Get reviews from current page
+            page_reviews = get_reviews_from_page(soup)
+            
+            if not page_reviews:
+                print(f"No reviews found on page {page}")
+                break
+                
+            all_reviews.extend(page_reviews)
+            print(f"Successfully scraped {len(page_reviews)} reviews from page {page}")
+            
+            # Random delay to avoid being blocked
+            time.sleep(random.uniform(2, 4))
+            page += 1
+            
+        except Exception as e:
+            print(f"Error processing page {page}: {e}")
+            break
+    
+    return all_reviews
+
+def get_product_details(product_url):
+    """Extract product price and image from Flipkart."""
+
+    if not isinstance(product_url, str) or not product_url.startswith('http'):
+        print(f"Invalid product URL: {product_url}")
+        return "N/A", "N/A"
+    
+    print(f"\nFetching product details from: {product_url}")
+    
+    try:
+        response = requests.get(product_url, headers=headers)
+        if response.status_code != 200:
+            print(f"Failed to fetch product page. Status code: {response.status_code}")
+            return "N/A", "N/A"
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Extract price with better error handling
+        try:
+            price_div = soup.find('div', {'class': 'Nx9bqj'})
+            price = price_div.text.strip() if price_div else "N/A"
+        except Exception as e:
+            print(f"Error extracting price: {e}")
+            price = "N/A"
+
+        # Extract product image with better error handling
+        try:
+            img_tag = soup.find('img', {'class': 'DByuf4 IZexXJ jLEJ7H'})
+            image_url = img_tag['src'] if img_tag else "N/A"
+        except Exception as e:
+            print(f"Error extracting image: {e}")
+            image_url = "N/A"
+        
+        return price, image_url
+
+    except Exception as e:
+        print(f"Error fetching product details: {e}")
+        return "N/A", "N/A"
+        image_url = img_tag['src'] if img_tag else "N/A"
+        
+        print(f"Product Price: {price}")
+        print(f"Product Image: {image_url}")
+        
+        return price, image_url
+
+    except Exception as e:
+        print(f"Error fetching product details: {e}")
+        return "N/A", "N/A"
+
+# -------------------- PREPROCESSING --------------------
 
 def clean_text(text):
+    """Clean the review text."""
     text = re.sub(r'<[^>]+>', '', text)  # Remove HTML tags
-    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)  # Remove special characters
-    text = text.lower().strip()  # Convert to lowercase and strip whitespace
-    return text
+    text = re.sub(r'READ MORE', '', text, flags=re.IGNORECASE)  # Remove "READ MORE"
+    text = re.sub(r'[^a-zA-Z0-9\s.,!?]', '', text)  # Remove special characters but keep punctuation
+    text = ' '.join(text.split())  # Normalize whitespace
+    return text.strip()
 
 def remove_stopwords(text):
+    """Remove stopwords from text."""
     stop_words = set(stopwords.words('english'))
-    return ' '.join(word for word in text.split() if word not in stop_words)
+    return ' '.join(word for word in text.split() if word.lower() not in stop_words)
 
 def lemmatize_text(text):
+    """Lemmatize words in text."""
     lemmatizer = WordNetLemmatizer()
     return ' '.join(lemmatizer.lemmatize(word) for word in text.split())
 
-def split_sentences(reviews):
-    sentences = []
-    for review in reviews:
-        sentences.extend(sent_tokenize(review))
-    return sentences
-
-def remove_duplicates(reviews):
-    return list(set(reviews))
-
-def filter_short_reviews(reviews, min_length=10):
-    return [review for review in reviews if len(review.split()) >= min_length]
-
 def preprocess_reviews(reviews):
-    reviews = [clean_text(review) for review in reviews]
-    reviews = [remove_stopwords(review) for review in reviews]
-    reviews = [lemmatize_text(review) for review in reviews]
-    reviews = split_sentences(reviews)
-    reviews = remove_duplicates(reviews)
-    reviews = filter_short_reviews(reviews)
-    return reviews
+    """Apply preprocessing pipeline to reviews."""
+    processed_reviews = []
+    for review in reviews:
+        # Clean text
+        cleaned = clean_text(review)
+        # Remove stopwords & lemmatize
+        processed_review = lemmatize_text(remove_stopwords(cleaned))
+        if len(processed_review.split()) >= 3:  # Keep only meaningful reviews
+            processed_reviews.append(processed_review)
+    
+    return processed_reviews
 
-def extractReviews(product_name, len_page=5):
-    """
-    Main function to extract reviews from Amazon
-    Args:
-        product_name: Product name to search for
-        len_page: Maximum number of pages to scrape (None for all pages)
-    """
-    # Get all product links
-    product_links = linkExtractor.get_product_links(product_name)
+# -------------------- MAIN FUNCTION --------------------
 
-    # Create an empty list to hold all reviews data
+def extractReviews(name, max_pages=15):
+    """Extract Flipkart reviews and product price."""
+    links = get_product_links(name)
+    
+    if not links:
+        print("No product links found!")
+        return [], "N/A", "N/A"
+
     all_reviews = []
-
+    
     # Iterate through each product link
-    for url in product_links:
-        # URL of the Amazon review page
-        reviews_url = modify_reviews_url(url)
-        base_url = get_base_url(reviews_url)
+    for link in links:  # Only process first link to avoid duplicates
+        url = modify_reviews_url(link)
+        print(f"\nExtracting reviews from: {url}") 
+    
+        # Get reviews
+        product_reviews = get_reviews(url, max_pages)
+        if product_reviews:
+            all_reviews.extend(product_reviews)
 
-        print(f"Scraping reviews for: {base_url}")
-
-        # Grab all HTML data
-        html_datas = reviewsHtml(reviews_url, url, len_page)
-
-        # Iterate over all HTML pages and gather review data
-        for html_data in html_datas:
-            reviews = getReviews(html_data)
-            if reviews:
-                all_reviews.extend(reviews)  # Append reviews to the master list
-
-    # Create a DataFrame with all reviews data
-    df_reviews = pd.DataFrame(all_reviews)
-
-    # Print the DataFrame
-    print(df_reviews)
-
+    if not all_reviews:
+        print("No reviews found!")
+        return [], "N/A", "N/A"
+    
+    # Save raw reviews
     if not os.path.exists('reviews'):
         os.makedirs('reviews')
-    # Save data to CSV with timestamp
+    
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f'reviews/{product_name}_reviews_{timestamp}.csv'
-    df_reviews.to_csv(filename, index=False)
-    print(f"Saved {len(all_reviews)} reviews to {filename}")
+    raw_filename = f'reviews/{name}_flipkart_reviews{timestamp}.csv'
+    df_reviews = pd.DataFrame(all_reviews)
+    
+    df_reviews.to_csv(raw_filename, index=False)
+    print(f"\nSaved {len(all_reviews)} raw reviews to {raw_filename}")
 
-    # Preprocess reviews
-    reviews = df_reviews['Description'].tolist()
-    reviews = preprocess_reviews(reviews)
+    # Preprocess review descriptions
+    processed_reviews = preprocess_reviews(df_reviews['Description'].tolist())
 
-    return reviews
+    # Fetch product details from the first valid product link
+    price, image_url = get_product_details(links[0])
 
-# Example usage
+    return {
+        'raw_reviews': all_reviews,
+        'processed_reviews': processed_reviews,
+        'price': price,
+        'image_url': image_url
+    }
+
+# -------------------- EXECUTION --------------------
+
 # if __name__ == "__main__":
-#     product_name = "iphone 13"  # Example product name
-#     reviews = extractReviews(product_name, len_page=10)  # Set len_page=None to scrape all pages
+#     name = input("Enter product name: ")
+#     extractReviews(name)

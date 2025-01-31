@@ -95,13 +95,21 @@ def get_or_create_db(product_name):
     try:
         db = load_db(product_name)
         print(f"Loaded existing FAISS database for {product_name}.")
+        price, image_url = reviewExtractor.get_product_details(product_name)
     except FileNotFoundError:
         print(f"No existing database found for {product_name}. Creating new database from reviews.")
-        reviews = reviewExtractor.extractReviews(product_name)
-        db = create_db_from_reviews(reviews)
+        result = reviewExtractor.extractReviews(product_name)
+        
+        # Use processed reviews directly
+        db = create_db_from_reviews(result['processed_reviews'])
         save_db(db, product_name)
+        
+        price = result['price']
+        image_url = result['image_url']
         print(f"New database created and saved for {product_name}.")
-    return db
+    
+    return db, price, image_url
+
 
 def handle_user_queries(db):
     while True:

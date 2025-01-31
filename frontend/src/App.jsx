@@ -16,6 +16,8 @@ const chartData = [
 export default function App() {
   const [productName, setProductName] = useState('');
   const [summary, setSummary] = useState('');
+  const [price, setPrice] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [query, setQuery] = useState('');
   const [queryHistory, setQueryHistory] = useState([]);
   const [loading, setLoading] = useState({
@@ -31,6 +33,8 @@ export default function App() {
 
   const fetchData = async (endpoint, data, loadingKey) => {
     setLoading((prev) => ({ ...prev, [loadingKey]: true }));
+    setError('');  // Clear any previous errors
+    
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
@@ -39,13 +43,18 @@ export default function App() {
         },
         body: JSON.stringify(data),
       });
+      
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(responseData.detail || `HTTP error! status: ${response.status}`);
       }
-      return await response.json();
+      
+      return responseData;
     } catch (error) {
       console.error(`Error fetching data from ${endpoint}:`, error);
-      setError('An error occurred while fetching data.');
+      setError(error.message || 'An error occurred while fetching data.');
+      return null;
     } finally {
       setLoading((prev) => ({ ...prev, [loadingKey]: false }));
     }
@@ -56,15 +65,24 @@ export default function App() {
     if (data) {
       if (data.summary) {
         setSummary(data.summary);
+        setPrice(data.price);
+        setImageUrl(data.image_url);
         setError('');
       } else {
         setSummary('');
+        setPrice('');
+        setImageUrl('');
         setError('No product or review found.');
       }
     }
   };
 
   const answerQuery = async () => {
+    if (!query.trim()) {
+      setError('Please enter a question.');
+      return;
+    }
+    
     const data = await fetchData('/answer_query', { product_name: productName, query }, 'query');
     if (data) {
       if (data.answer) {
@@ -72,8 +90,10 @@ export default function App() {
         setQuery('');
         setError('');
       } else {
-        setError('No answer found.');
+        setError('No answer found. Please try rephrasing your question.');
       }
+    } else {
+      setError('Failed to get answer. Please try again later.');
     }
   };
 
@@ -99,6 +119,14 @@ export default function App() {
         <div>
           <Summary productName={productName} summary={summary} error={error} />
           {/* <ReviewChart data={chartData} /> */}
+          {/* New Section for Price and Image */}
+          <div className="p-4 bg-white rounded-lg shadow-md mt-4">
+            <h3 className="text-xl font-semibold">Product Details</h3>
+            <p className="text-lg text-gray-700">Price: {price || "N/A"}</p>
+            {imageUrl && (
+              <img src={imageUrl} alt="Product" className="mt-2 w-40 h-auto rounded-lg shadow-md" />
+            )}
+          </div>
            
           <div className="p-4 bg-white rounded-lg shadow-md">
             <div className="flex justify-around mb-4">
