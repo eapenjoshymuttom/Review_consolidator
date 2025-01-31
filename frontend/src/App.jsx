@@ -64,7 +64,8 @@ export default function App() {
         // Fetch component ratings
         const ratingsData = await fetchData('/component_ratings', { product_name: productName }, 'ratings', setLoading);
         if (ratingsData) {
-          setComponentRatings(ratingsData);
+          console.log('Component Ratings:', ratingsData.ratings);  // Add logging
+          setComponentRatings(ratingsData.ratings || { component_ratings: [], overall_rating: 0 });
         }
       } else {
         setSummary('');
