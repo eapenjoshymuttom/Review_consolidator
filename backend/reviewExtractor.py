@@ -157,16 +157,6 @@ def get_product_details(product_url):
     except Exception as e:
         print(f"Error fetching product details: {e}")
         return "N/A", "N/A"
-        image_url = img_tag['src'] if img_tag else "N/A"
-        
-        print(f"Product Price: {price}")
-        print(f"Product Image: {image_url}")
-        
-        return price, image_url
-
-    except Exception as e:
-        print(f"Error fetching product details: {e}")
-        return "N/A", "N/A"
 
 # -------------------- PREPROCESSING --------------------
 

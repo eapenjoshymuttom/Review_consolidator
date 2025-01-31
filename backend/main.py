@@ -40,6 +40,7 @@ class GenerateTemplateRequest(BaseModel):
     focus_areas: List[str]
 
 @app.options("/product_summary")
+@app.options("/component_ratings")
 @app.options("/answer_query")
 @app.options("/personalize_review_style")
 @app.options("/text_completion")
@@ -70,6 +71,19 @@ async def get_product_summary(product_query: ProductQuery):
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/component_ratings")
+async def get_component_ratings(product_query: ProductQuery):
+    try:
+        db, _, _ = bot.get_or_create_db(product_query.product_name)
+        if db is None:
+            raise HTTPException(status_code=404, detail="No reviews found for this product.")
+        
+        ratings = bot.extract_component_ratings(db, product_query.product_name)
+        return ratings
+    except Exception as e:
+        print(f"Error in get_component_ratings: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/answer_query")
 async def answer_query(review_query: ReviewQuery):
