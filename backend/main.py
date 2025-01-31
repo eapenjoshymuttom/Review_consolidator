@@ -5,7 +5,7 @@ from typing import List, Optional
 import traceback
 import bot
 import features
-import reviewExtractor
+# import reviewExtractor
 
 app = FastAPI()
 
@@ -40,6 +40,7 @@ class GenerateTemplateRequest(BaseModel):
     focus_areas: List[str]
 
 @app.options("/product_summary")
+@app.options("/component_ratings")
 @app.options("/answer_query")
 @app.options("/personalize_review_style")
 @app.options("/text_completion")
@@ -50,23 +51,53 @@ async def options_handler():
 
 @app.post("/product_summary")
 async def get_product_summary(product_query: ProductQuery):
+    """Fetch product summary, price, and image."""
     try:
         name = product_query.product_name
-        db = bot.get_or_create_db(name)
+        db, price, image_url = bot.get_or_create_db(name)  # No more unpacking error
+        if db is None:
+            raise HTTPException(status_code=404, detail="No reviews found for this product.")
+        
         summary = bot.get_product_summary(db, name)
-        return {"summary": summary}
+
+        return {
+            "summary": summary,
+            "price": price,
+            "image_url": image_url
+        }
+
     except Exception as e:
-        print(f"Error in get_product_summary: {str(e)}")  # Add this line for debugging
-        print(traceback.format_exc())  # Print full traceback
+        print(f"Error in get_product_summary: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/component_ratings")
+async def get_component_ratings(product_query: ProductQuery):
+    try:
+        db, _, _ = bot.get_or_create_db(product_query.product_name)
+        if db is None:
+            raise HTTPException(status_code=404, detail="No reviews found for this product.")
+        
+        ratings = bot.extract_component_ratings(db, product_query.product_name)
+        return ratings
+    except Exception as e:
+        print(f"Error in get_component_ratings: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/answer_query")
 async def answer_query(review_query: ReviewQuery):
     try:
-        db = bot.get_or_create_db(review_query.product_name)
+        # Unpack all three returned values
+        db, price, image_url = bot.get_or_create_db(review_query.product_name)
+        if db is None:
+            raise HTTPException(status_code=404, detail="No reviews found for this product.")
+            
         answer, _ = bot.get_response_from_query(db, review_query.query)
         return {"answer": answer}
     except Exception as e:
+        print(f"Error in answer_query: {str(e)}")  # Add logging
+        print(traceback.format_exc())  # Print full traceback
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/personalize_review_style")

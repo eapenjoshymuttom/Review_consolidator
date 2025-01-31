@@ -2,6 +2,7 @@ import os
 import reviewExtractor
 import price_comparison
 import warnings
+import json
 from transformers import AutoTokenizer
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -95,13 +96,72 @@ def get_or_create_db(product_name):
     try:
         db = load_db(product_name)
         print(f"Loaded existing FAISS database for {product_name}.")
+        price, image_url = reviewExtractor.get_product_details(product_name)
     except FileNotFoundError:
         print(f"No existing database found for {product_name}. Creating new database from reviews.")
-        reviews = reviewExtractor.extractReviews(product_name)
-        db = create_db_from_reviews(reviews)
+        result = reviewExtractor.extractReviews(product_name)
+        
+        # Use processed reviews directly
+        db = create_db_from_reviews(result['processed_reviews'])
         save_db(db, product_name)
+        
+        price = result['price']
+        image_url = result['image_url']
         print(f"New database created and saved for {product_name}.")
-    return db
+    
+    return db, price, image_url
+
+def extract_component_ratings(db, product_name):
+    """Extract ratings for different components from product reviews."""
+    # Get relevant reviews
+    docs = db.similarity_search(product_name, k=150)
+    docs_content = " ".join([d.page_content for d in docs])
+    
+    prompt = f'''
+    Analyze these product reviews and extract ratings for different components.
+    For a {product_name}, identify the main components (e.g., camera, battery, performance)
+    and provide an average rating out of 5 for each component based on the reviews.
+    
+    Reviews: {docs_content}
+    
+    Return the results in this exact format:
+    {{
+        "component_ratings": [
+            {{"name": "Component1", "rating": X.X}},
+            {{"name": "Component2", "rating": X.X}},
+            ...
+        ],
+        "overall_rating": X.X
+    }}
+    '''
+    
+    completion = client.chat.completions.create(
+        model="llama3-70b-8192",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5,
+        max_tokens=1000,
+        top_p=1,
+    )
+    
+    try:
+        # Log the response content for debugging
+        response_content = completion.choices[0].message.content.strip()
+        print(f"Response content: {response_content}")
+        
+        # Extract the JSON part from the response content
+        json_start = response_content.find('{')
+        json_end = response_content.rfind('}') + 1
+        json_content = response_content[json_start:json_end]
+        
+        # Parse the JSON content and return it
+        response = json.loads(json_content)
+        return response
+    except Exception as e:
+        print(f"Error parsing component ratings: {str(e)}")
+        return {
+            "component_ratings": [],
+            "overall_rating": 0
+        }
 
 def handle_user_queries(db):
     while True:
