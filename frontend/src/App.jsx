@@ -30,7 +30,7 @@ const fetchData = async (endpoint, data, loadingKey, setLoading) => {
 };
 
 export default function App() {
-  const [productName, setProductName] = useState('');
+  const [productInput, setProductInput] = useState('');
   const [summary, setSummary] = useState('');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -53,7 +53,7 @@ export default function App() {
   const [error, setError] = useState('');
 
   const getProductSummary = async () => {
-    const summaryData = await fetchData('/product_summary', { product_name: productName }, 'summary', setLoading);
+    const summaryData = await fetchData('/product_summary', { product_input: productInput }, 'summary', setLoading);
     if (summaryData) {
       if (summaryData.summary) {
         setSummary(summaryData.summary);
@@ -62,7 +62,7 @@ export default function App() {
         setError('');
         
         // Fetch component ratings
-        const ratingsData = await fetchData('/component_ratings', { product_name: productName }, 'ratings', setLoading);
+        const ratingsData = await fetchData('/component_ratings', { product_input: productInput }, 'ratings', setLoading);
         if (ratingsData) {
           console.log('Component Ratings:', ratingsData.ratings);  // Add logging
           setComponentRatings(ratingsData.ratings || { component_ratings: [], overall_rating: 0 });
@@ -82,7 +82,7 @@ export default function App() {
       return;
     }
     
-    const data = await fetchData('/answer_query', { product_name: productName, query }, 'query', setLoading);
+    const data = await fetchData('/answer_query', { product_name: productInput, query }, 'query', setLoading);
     if (data) {
       if (data.answer) {
         setQueryHistory((prev) => [...prev, { question: query, answer: data.answer }]);
@@ -97,7 +97,7 @@ export default function App() {
   };
 
   const resetState = () => {
-    setProductName('');
+    setProductInput('');
     setSummary('');
     setQuery('');
     setQueryHistory([]);
@@ -109,14 +109,14 @@ export default function App() {
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
       {!summary && !error ? (
         <ProductInput
-          productName={productName}
-          setProductName={setProductName}
+          productInput={productInput}
+          setProductInput={setProductInput}
           getProductSummary={getProductSummary}
           loading={loading}
         />
       ) : (
         <div>
-          <Summary productName={productName} summary={summary} error={error} />
+          <Summary productName={productInput} summary={summary} error={error} />
           <div className="mt-4">
             {!error && componentRatings.component_ratings.length > 0 && (
               <div className="mt-4">
@@ -161,7 +161,7 @@ export default function App() {
 
               {activeTab === 'ask' && (
                 <AskQuestions
-                  productName={productName}
+                  productName={productInput}
                   query={query}
                   setQuery={setQuery}
                   answerQuery={answerQuery}
@@ -171,11 +171,11 @@ export default function App() {
               )}
 
               {activeTab === 'review' && (
-                <WriteReview productName={productName} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
+                <WriteReview productName={productInput} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
 
               {activeTab === 'personalize' && (
-                <PersonalizeReview productName={productName} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
+                <PersonalizeReview productName={productInput} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
             </div>
             <div className="flex justify-center mt-6">

@@ -1,6 +1,5 @@
 import os
 import reviewExtractor
-import price_comparison
 import warnings
 import json
 from transformers import AutoTokenizer
@@ -10,6 +9,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
 from groq import Groq
 import pickle
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,6 +27,10 @@ client = Groq(api_key=groq_api_key)
 # Initialize HuggingFaceEmbeddings with the loaded tokenizer
 embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
 
+def sanitize_filename(filename):
+    """Sanitize the filename by replacing invalid characters and spaces with underscores."""
+    return re.sub(r'[\\/*?:"<>| ]', '_', filename)
+
 def create_db_from_reviews(reviews: list) -> FAISS:
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=8)
     docs = text_splitter.create_documents(reviews)
@@ -37,12 +41,14 @@ def create_db_from_reviews(reviews: list) -> FAISS:
 def save_db(db, product_name, price, image_url):
     if not os.path.exists('product_dbs'):
         os.makedirs('product_dbs')
-    filename = f"product_dbs/{product_name.replace(' ', '_').lower()}_faiss_index.pkl"
+    sanitized_name = sanitize_filename(product_name)
+    filename = f"product_dbs/{sanitized_name}_faiss_index.pkl"
     with open(filename, "wb") as f:
         pickle.dump({'db': db, 'price': price, 'image_url': image_url}, f)
 
 def load_db(product_name):
-    filename = f"product_dbs/{product_name.replace(' ', '_').lower()}_faiss_index.pkl"
+    sanitized_name = sanitize_filename(product_name)
+    filename = f"product_dbs/{sanitized_name}_faiss_index.pkl"
     with open(filename, "rb") as f:
         data = pickle.load(f)
         return data['db'], data['price'], data['image_url']
@@ -108,6 +114,24 @@ def get_or_create_db(product_name):
         price = result['price']
         image_url = result['image_url']
         print(f"New database created and saved for {product_name}.")
+    
+    return db, price, image_url
+
+def get_or_create_db_from_link(product_link):
+    try:
+        db, price, image_url = load_db(product_link)
+        print(f"Loaded existing FAISS database for {product_link}.")
+    except FileNotFoundError:
+        print(f"No existing database found for {product_link}. Creating new database from reviews.")
+        result = reviewExtractor.extractReviewsFromLink(product_link)
+        
+        # Use processed reviews directly
+        db = create_db_from_reviews(result['processed_reviews'])
+        save_db(db, product_link, result['price'], result['image_url'])
+        
+        price = result['price']
+        image_url = result['image_url']
+        print(f"New database created and saved for {product_link}.")
     
     return db, price, image_url
 
@@ -180,7 +204,6 @@ def main(product_name):
     print("\nProduct Summary:")
     summary = get_product_summary(db, product_name)
     print(summary)
-    # price_comparison.priceComparison(product_name)
 
     handle_user_queries(db)
 

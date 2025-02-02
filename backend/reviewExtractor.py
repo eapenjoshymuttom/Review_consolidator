@@ -241,6 +241,46 @@ def extractReviews(name, max_pages=15):
         'image_url': image_url
     }
 
+def extractReviewsFromLink(link, max_pages=15):
+    """Extract Flipkart reviews and product price from a specific link."""
+    all_reviews = []
+    
+    url = modify_reviews_url(link)
+    print(f"\nExtracting reviews from: {url}") 
+    
+    # Get reviews
+    product_reviews = get_reviews(url, max_pages)
+    if product_reviews:
+        all_reviews.extend(product_reviews)
+
+    if not all_reviews:
+        print("No reviews found!")
+        return [], "N/A", "N/A"
+    
+    # Save raw reviews
+    if not os.path.exists('reviews'):
+        os.makedirs('reviews')
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    raw_filename = f'reviews/{link.split("/")[-1]}_flipkart_reviews{timestamp}.csv'
+    df_reviews = pd.DataFrame(all_reviews)
+    
+    df_reviews.to_csv(raw_filename, index=False)
+    print(f"\nSaved {len(all_reviews)} raw reviews to {raw_filename}")
+
+    # Preprocess review descriptions
+    processed_reviews = preprocess_reviews(df_reviews['Description'].tolist())
+
+    # Fetch product details from the link
+    price, image_url = get_product_details(link)
+
+    return {
+        'raw_reviews': all_reviews,
+        'processed_reviews': processed_reviews,
+        'price': price,
+        'image_url': image_url
+    }
+
 # -------------------- EXECUTION --------------------
 
 # if __name__ == "__main__":
