@@ -55,8 +55,10 @@ async def get_product_summary(product_query: ProductQuery):
     try:
         if product_query.product_input.startswith("http"):
             db, price, image_url = bot.get_or_create_db_from_link(product_query.product_input)
+            display_name = bot.extract_product_name_from_url(product_query.product_input)
         else:
             db, price, image_url = bot.get_or_create_db(product_query.product_input)
+            display_name = product_query.product_input
         
         if db is None:
             raise HTTPException(status_code=404, detail="No reviews found for this product.")
@@ -66,7 +68,8 @@ async def get_product_summary(product_query: ProductQuery):
         return {
             "summary": summary,
             "price": price,
-            "image_url": image_url
+            "image_url": image_url,
+            "display_name": display_name
         }
 
     except Exception as e:

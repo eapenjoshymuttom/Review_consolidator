@@ -241,8 +241,16 @@ def extractReviews(name, max_pages=15):
         'image_url': image_url
     }
 
+def sanitize_filename(filename):
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', filename)
+    return sanitized[:100]  # Truncate to 100 characters
+
 def extractReviewsFromLink(link, max_pages=15):
-    """Extract Flipkart reviews and product price from a specific link."""
+    sanitized_link = sanitize_filename(link)  # Sanitize FULL link first
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    raw_filename = f'reviews/{sanitized_link}_flipkart_reviews{timestamp}.csv'
     all_reviews = []
     
     url = modify_reviews_url(link)
@@ -261,10 +269,13 @@ def extractReviewsFromLink(link, max_pages=15):
     if not os.path.exists('reviews'):
         os.makedirs('reviews')
     
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    raw_filename = f'reviews/{link.split("/")[-1]}_flipkart_reviews{timestamp}.csv'
-    df_reviews = pd.DataFrame(all_reviews)
+    sanitized_link = sanitize_filename(link.split("/")[-1])
+    raw_filename = f'reviews/{sanitized_link}_flipkart_reviews{timestamp}.csv'
     
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(raw_filename), exist_ok=True)
+    
+    df_reviews = pd.DataFrame(all_reviews)
     df_reviews.to_csv(raw_filename, index=False)
     print(f"\nSaved {len(all_reviews)} raw reviews to {raw_filename}")
 
@@ -280,9 +291,3 @@ def extractReviewsFromLink(link, max_pages=15):
         'price': price,
         'image_url': image_url
     }
-
-# -------------------- EXECUTION --------------------
-
-# if __name__ == "__main__":
-#     name = input("Enter product name: ")
-#     extractReviews(name)
