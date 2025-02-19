@@ -31,6 +31,7 @@ const fetchData = async (endpoint, data, loadingKey, setLoading) => {
 
 export default function App() {
   const [productInput, setProductInput] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [summary, setSummary] = useState('');
   const [price, setPrice] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -59,6 +60,7 @@ export default function App() {
         setSummary(summaryData.summary);
         setPrice(summaryData.price);
         setImageUrl(summaryData.image_url);
+        setDisplayName(summaryData.display_name || productInput);
         setError('');
         
         // Fetch component ratings
@@ -71,6 +73,7 @@ export default function App() {
         setSummary('');
         setPrice('');
         setImageUrl('');
+        setDisplayName('');
         setError('No product or review found.');
       }
     }
@@ -116,8 +119,8 @@ export default function App() {
         />
       ) : (
         <div>
-          <Summary productName={productInput} summary={summary} error={error} />
-          <div className="mt-4">
+        <Summary productName={displayName || productInput} summary={summary} error={error} />
+        <div className="mt-4">
             {!error && componentRatings.component_ratings.length > 0 && (
               <div className="mt-4">
                 <ProductRatingsChart 
@@ -161,7 +164,7 @@ export default function App() {
 
               {activeTab === 'ask' && (
                 <AskQuestions
-                  productName={productInput}
+                  productName={displayName || productInput}
                   query={query}
                   setQuery={setQuery}
                   answerQuery={answerQuery}
@@ -171,11 +174,11 @@ export default function App() {
               )}
 
               {activeTab === 'review' && (
-                <WriteReview productName={productInput} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
+                <WriteReview productName={displayName || productInput} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
 
               {activeTab === 'personalize' && (
-                <PersonalizeReview productName={productInput} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
+                <PersonalizeReview productName={displayName || productInput} fetchData={(endpoint, data, loadingKey) => fetchData(endpoint, data, loadingKey, setLoading)} loading={loading} />
               )}
             </div>
             <div className="flex justify-center mt-6">

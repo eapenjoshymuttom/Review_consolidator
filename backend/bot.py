@@ -28,8 +28,8 @@ client = Groq(api_key=groq_api_key)
 embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
 
 def sanitize_filename(filename):
-    """Sanitize the filename by replacing invalid characters and spaces with underscores."""
-    return re.sub(r'[\\/*?:"<>| ]', '_', filename)
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', filename)
+    return sanitized[:100]  # Truncate to 100 characters
 
 def create_db_from_reviews(reviews: list) -> FAISS:
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=8)
@@ -116,6 +116,24 @@ def get_or_create_db(product_name):
         print(f"New database created and saved for {product_name}.")
     
     return db, price, image_url
+
+def extract_product_name_from_url(url):
+    """Extract a readable product name from a Flipkart URL."""
+    try:
+        # Regular expression to extract product name from URL
+        match = re.search(r'/([^/]+?)(?:/p/|$)', url)
+        if match:
+            product_name = match.group(1)
+            # Clean up the product name
+            product_name = product_name.replace('-', ' ')
+            # Limit to first 3-4 words for cleaner display
+            words = product_name.split()
+            if len(words) > 4:
+                product_name = ' '.join(words[:4])
+            return product_name
+        return url
+    except:
+        return url
 
 def get_or_create_db_from_link(product_link):
     try:
