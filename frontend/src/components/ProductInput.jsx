@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function ProductInput({ productName, setProductName, getProductSummary, loading }) {
+export default function ProductInput({ productInput, setProductInput, getProductSummary, loading }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     getProductSummary();
@@ -8,14 +8,14 @@ export default function ProductInput({ productName, setProductName, getProductSu
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-semibold mb-4">Enter Product Name</h2>
+      <h2 className="text-2xl font-semibold mb-4">Enter Product Name or Link</h2>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
+          value={productInput}
+          onChange={(e) => setProductInput(e.target.value)}
           className="p-2 border border-gray-300 rounded-lg w-full mb-4"
-          placeholder="e.g., iPhone 12"
+          placeholder="e.g., iPhone 12 or https://www.flipkart.com/product-link"
         />
         <button
           type="submit"

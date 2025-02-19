@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 class ProductQuery(BaseModel):
-    product_name: str
+    product_input: str
 
 class ReviewQuery(BaseModel):
     product_name: str
@@ -53,12 +53,15 @@ async def options_handler():
 async def get_product_summary(product_query: ProductQuery):
     """Fetch product summary, price, and image."""
     try:
-        name = product_query.product_name
-        db, price, image_url = bot.get_or_create_db(name)
+        if product_query.product_input.startswith("http"):
+            db, price, image_url = bot.get_or_create_db_from_link(product_query.product_input)
+        else:
+            db, price, image_url = bot.get_or_create_db(product_query.product_input)
+        
         if db is None:
             raise HTTPException(status_code=404, detail="No reviews found for this product.")
         
-        summary = bot.get_product_summary(db, name)
+        summary = bot.get_product_summary(db, product_query.product_input)
 
         return {
             "summary": summary,
@@ -74,11 +77,15 @@ async def get_product_summary(product_query: ProductQuery):
 @app.post("/component_ratings")
 async def get_component_ratings(product_query: ProductQuery):
     try:
-        db, price, image_url = bot.get_or_create_db(product_query.product_name)
+        if product_query.product_input.startswith("http"):
+            db, price, image_url = bot.get_or_create_db_from_link(product_query.product_input)
+        else:
+            db, price, image_url = bot.get_or_create_db(product_query.product_input)
+        
         if db is None:
             raise HTTPException(status_code=404, detail="No reviews found for this product.")
         
-        ratings = bot.extract_component_ratings(db, product_query.product_name)
+        ratings = bot.extract_component_ratings(db, product_query.product_input)
         print(f"Component ratings: {ratings}")  # Add logging
         return {
             "ratings": ratings,
