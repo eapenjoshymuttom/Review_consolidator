@@ -66,7 +66,7 @@ def get_product_links(product_name, max_retries=5):
                     print(f"Error extracting link from result: {str(e)}")
                     continue
 
-                if len(links) >= 5:  # Limit to first 3 links
+                if len(links) >= 5:
                     break
 
             if links:

@@ -5,3 +5,4 @@ __pycache__/
 /product_dbs/
 /faiss_index.pkl
 reviews.csv
+.qodo
